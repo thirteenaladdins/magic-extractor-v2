@@ -1,7 +1,7 @@
 
 /* Light Theme */
 :root {
-    --primary-color: #007ACC;
+    --primary-color: #569CD6;
     --secondary-color: #D4E6FB;
     --accent-color: #D18616;
     --background-color: #F3F3F3; /* Soft background color */
@@ -13,7 +13,8 @@
 
 /* Dark Theme */
 [data-theme='dark'] {
-    --primary-color: #1E1E1E;
+    /* --primary-color: #1E1E1E; */
+    --primary-color: #569CD6;
     --primary-loading: ;
     --secondary-color: #252526;
     --accent-color: #569CD6;
@@ -25,7 +26,7 @@
 }
 
 [data-theme='serpent'] {
-    --primary-color: #2e7d32; /* Slightly darker green for primary elements for better contrast */
+    --primary-color: #cddc39; /* Slightly darker green for primary elements for better contrast */
     --secondary-color: #587c4d; /* A muted green that's closer to the background for a more subtle contrast */
     --accent-color: #cddc39; /* Mustard yellow for a vibrant accent and outlines */
     --background-color: #4E7942; /* Maintained the original serpent green for the background */

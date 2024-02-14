@@ -126,23 +126,20 @@ when the duplicate is removed then remove the notification from the top
 			: ''}"
 		tabindex="0"
 	>
-		<input
-			bind:this={fileInput}
-			multiple
-			type="file"
-			accept="application/pdf"
-			style="display: none;"
-			on:change={handleFiles}
-		/>
+		<div class="button-container">
+			<input
+				bind:this={fileInput}
+				multiple
+				type="file"
+				accept="application/pdf"
+				style="display: none;"
+				on:change={handleFiles}
+			/>
+		</div>
 
 		{#if selectedFiles.length === 0}
-			<img
-				src={UploadIcon}
-				alt="Drop your files here"
-				class="pointer-events-none select-none drop-icon"
-			/>
 			<div class="pointer-events-none select-none text-sm">
-				Click to choose a file or drag it here
+				Drag and drop your files anywhere to begin upload
 			</div>
 		{/if}
 
@@ -172,8 +169,6 @@ when the duplicate is removed then remove the notification from the top
 		</div>
 	</div>
 
-	<!-- after success, then load the component -->
-
 	<button
 		on:click={handleFileUpload(selectedFiles, $selectedItem)}
 		class="upload-button"
@@ -181,6 +176,8 @@ when the duplicate is removed then remove the notification from the top
 	>
 		Upload
 	</button>
+
+	<!-- after success, then load the component -->
 </div>
 
 <style>
@@ -189,13 +186,14 @@ when the duplicate is removed then remove the notification from the top
 		justify-content: center;
 		flex-direction: column;
 		align-items: center;
-		height: 25rem;
-		width: 40rem;
-		border: 2px solid var(--accent-color);
+		height: 30rem;
+		width: 54rem;
+		border: 2px solid var(--primary-color);
 		border-radius: 10px;
-		background-color: var(--secondary-color);
+		/* background-color: var(--secondary-color); */
 	}
 
+	/* drop area now covers the entire screen */
 	.drop-area-full {
 		display: flex;
 		flex-direction: column; /* Changed to column for vertical alignment of icon and text */
@@ -203,16 +201,15 @@ when the duplicate is removed then remove the notification from the top
 		align-items: center;
 		justify-content: center;
 		overflow: hidden;
-		height: 20rem;
-		width: 36rem;
+		height: 24rem;
+		width: 46rem;
 		padding: 1rem;
 		font-size: 0.9rem;
 		overflow-y: auto;
 		overflow-wrap: normal;
 		word-break: normal;
-		border: 2px dashed var(--accent-color);
-		border-radius: 10px; /* Added for rounded borders */
-		/* background-color: #f5f7fd;  */
+		border: 2px dashed var(--primary-color);
+
 		/* Light background color for better contrast */
 		transition: background-color 0.3s; /* Smooth transition for hover effect */
 	}
@@ -230,11 +227,10 @@ when the duplicate is removed then remove the notification from the top
 		justify-content: flex-start; /* Start items from the top */
 		overflow-wrap: normal;
 		word-break: normal;
-
 		/* background-color: var(--primary-color); */
 		/* cursor: pointer; */
 		border-radius: 10px; /* Added for rounded borders */
-		/* background-color: #f5f7fd;  */
+		/* background-color: #f5f7fd; */
 		/* Light background color for better contrast */
 		transition: background-color 0.3s; /* Smooth transition for hover effect */
 	}

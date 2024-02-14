@@ -2,6 +2,7 @@
 	import Papa from 'papaparse';
 	import { sessionData } from '../store/sessionStore';
 	import { onMount } from 'svelte';
+	import GenericTable from './GenericTable.svelte';
 
 	let sessionResponse;
 
@@ -12,6 +13,9 @@
 	let fileData = sessionResponse?.data;
 	let fileType = sessionResponse?.filetype;
 	let fileName = sessionResponse?.filename;
+
+	let tableHeaders = [];
+	let tableRows = [];
 
 	let parsedData = [];
 	let columnSum = 0;
@@ -96,6 +100,11 @@
 			row.classList.toggle('highlighted-row');
 		}
 	}
+
+	$: if (parsedData && parsedData.length > 0) {
+		tableHeaders = ['#', ...parsedData[0]]; // Include '#' for row numbers
+		tableRows = parsedData.slice(1).map((row, index) => [index + 1, ...row]); // Map each row to include row number
+	}
 </script>
 
 <!-- Your style code remains unchanged -->
@@ -109,13 +118,19 @@
 	<div><b>Total Cartons:</b> {totalCartons}</div>
 </div>
 
-<div class="table-data-viewer font-sans">
+<!-- The table data viewer -->
+<!-- <div class="table-data-viewer font-sans"> -->
+<GenericTable headers={tableHeaders} rows={tableRows} />
+
+<!-- </div> -->
+
+<!-- <div class="table-data-viewer font-sans">
 	<table class="table">
 		<thead>
 			{#if parsedData.length > 0}
 				<tr>
 					<th>#</th>
-					<!-- Added this extra header for the row number indicator -->
+
 					{#each parsedData[0] as headerCell}
 						<th>{headerCell}</th>
 					{/each}
@@ -132,7 +147,7 @@
 			{/each}
 		</tbody>
 	</table>
-</div>
+</div> -->
 
 <style>
 	.table-data-viewer {
@@ -142,113 +157,20 @@
 		counter-reset: rowNumber; /* Initialize the counter */
 	}
 
+	/* FIXME: Fix the banner here - colour does not fill whole background */
 	.summaries {
 		display: flex;
 		height: 100%;
+		width: 100%;
 		gap: 10px;
 		padding: 16px;
-		font-size: 14px;
-		background-color: #6366f1;
-		color: white;
-	}
-
-	.highlighted-row {
-		background-color: #ffe58f !important; /* Use any color you prefer for highlighting. The !important is to override any other background color styles. */
-	}
-
-	tbody tr::before {
-		content: counter(rowNumber); /* Display the current count */
-		counter-increment: rowNumber; /* Increment the counter */
-		display: table-cell; /* Make it behave like a table cell */
-		padding: 8px;
-		border: 1px solid #ddd;
-		text-align: right; /* Align the number to the right side of its cell */
-		width: 1.5em; /* Adjust width as necessary */
-		font-weight: bold;
-	}
-
-	tbody tr:hover::before {
-		border: 1px solid #9fb5fc;
-		background-color: #e7e9fc; /* Slight background change for clarity on hover */
-	}
-
-	table {
-		border-collapse: separate;
-		border-spacing: 0;
-	}
-
-	th,
-	td {
-		border-right: 1px solid #ddd;
-		border-bottom: 1px solid #ddd;
-		padding: 8px;
-		text-align: left;
-	}
-
-	th:first-child,
-	td:first-child {
-		border-left: 1px solid #ddd; /* Add left border for the first cell */
-	}
-
-	tr:first-child th {
-		border-top: 1px solid #ddd; /* Add top border for the first row */
-	}
-
-	thead th {
-		position: sticky;
-		top: 0;
-		z-index: 10;
-		background-color: #f2f2f2;
-		box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
-	}
-
-	th,
-	td {
-		border: 1px solid #ddd;
-		padding: 8px;
-		text-align: left;
-	}
-
-	/* Overlap the tbody's first row with the sticky header */
-	tbody {
-		margin-top: -1px;
-	}
-
-	tbody tr {
-		background-color: white;
-	}
-
-	tbody tr:nth-child(2n) {
-		background-color: #f2f2f2;
-	}
-
-	/* Header cells hover effect */
-	thead th:hover {
-		border: 1px solid #9fb5fc;
-		background-color: #e7e9fc; /* Slight background change for clarity on hover */
-	}
-
-	tbody td:hover {
-		border: 1px solid #9fb5fc;
-		background-color: #e7e9fc; /* Slight background change for clarity on hover */
+		/* font-size: 14px; */
+		/* background-color: #6366f1; */
+		/* color: white; */
 	}
 
 	.font-sans {
 		font-family: Open Sans, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu,
 			Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
-	}
-
-	.table {
-		font-size: 14px;
-		text-overflow: ellipsis;
-		height: 10px;
-		width: 5px;
-	}
-
-	table td,
-	table th {
-		overflow: hidden;
-		text-overflow: ellipsis; /* this will display '...' if the content is too long for the cell */
-		white-space: nowrap; /* this will prevent the content from wrapping onto the next line */
 	}
 </style>

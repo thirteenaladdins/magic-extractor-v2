@@ -14,9 +14,8 @@
 	}
 
 	function toggleHighlightTheme(themeName) {
-			theme.set({ selected: themeName, actual: themeName });
-		}
-	
+		theme.set({ selected: themeName, actual: themeName });
+	}
 
 	let isNavOpen = false;
 	let showTools = true;
@@ -65,9 +64,7 @@
 	{#if import.meta.env.VITE_ENV === 'development'}
 		<button
 			on:click={() => toggleHighlight('Annotate')}
-			class="sidebar-button font-sans disabled-icon {$selectedItem === 'Annotate'
-				? 'on-selected-sidebar'
-				: ''}"
+			class="sidebar-button font-sans {$selectedItem === 'Annotate' ? 'on-selected-sidebar' : ''}"
 		>
 			Annotate
 		</button>
@@ -191,8 +188,7 @@
 		/* background-color: rgb(255, 165, 92); */
 		/* background-color: rgb(225, 232, 240); */
 		/* border: 1px solid var(--active-text-color); */
-		color:var(--active-text-color);
-		
+		color: var(--active-text-color);
 	}
 
 	/* .sidenav button:active {

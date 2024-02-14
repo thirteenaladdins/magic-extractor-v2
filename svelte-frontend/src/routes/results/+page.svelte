@@ -41,8 +41,8 @@
 <style>
 	:global(body),
 	:global(html) {
-		margin: 0;
-		padding: 0;
+		/* margin: 0;
+		padding: 0; */
 		overflow-y: hidden;
 		height: 100%;
 	}

@@ -1,4 +1,8 @@
-<script context="module">
+<!-- <script context="module">
+	
+</script> -->
+
+<script>
 	import { getBaseUrl } from '../utils/config.js';
 
 	const baseUrl = getBaseUrl();
@@ -23,9 +27,7 @@
 			props: { serverAwake, showSuccessMessage }
 		};
 	}
-</script>
 
-<script>
 	import { goto } from '$app/navigation';
 	import { sessionData } from '../store/sessionStore.js';
 	// import { version } from '../utils/version.js';
@@ -38,11 +40,12 @@
 
 	import SideNav from '../components/SideNav.svelte';
 	import DropAreaFileUpload from '../components/DropAreaFileUpload.svelte';
+	import ErrorAlert from '../components/ErrorAlert.svelte';
 	import { selectedItem } from '../store/selectedItemStore.js';
 	// import Footer from "../components/Footer.svelte";
 
 	import { fileCount } from '../store/fileCountStore.js';
-	import { writable } from 'svelte/store';
+	// import { writable } from 'svelte/store';
 	import Loading from '../components/Loading.svelte';
 
 	// HANDLE DRAG AND DROP
@@ -61,6 +64,7 @@
 	} from '../utils/dragState.js';
 
 	import { isHighlighted } from '../utils/dragState.js';
+	import ErrorComponent from '../components/ErrorAlert.svelte';
 
 	let highlighted;
 
@@ -76,17 +80,34 @@
 	export let serverAwake;
 	export let showSuccessMessage;
 
-	let isError;
+	let showError;
 	let dropArea;
 
-	// let isDuplicate;
+	let isDuplicate;
 
-	errorMessage.subscribe((value) => (isError = value));
+	// errorMessage.subscribe((value) => {
+	// 	showError = !!value; // Update showError based on the error message
+	// 	if (showError) {
+	// 		loading.set(false); // Stop loading when there's an error
+	// 	}
+	// });
+
+	// Subscription to errorMessage store
+	errorMessage.subscribe((value) => {
+		if (value) {
+			const newMessage = {
+				id: `msg-${messageIdCounter++}`,
+				text: value
+			};
+			messages = [...messages, newMessage];
+			errorMessage.set(''); // Reset the store
+		}
+	});
 
 	let dots = 3;
 	let interval;
 
-	if (typeof window != undefined) {
+	if (typeof window !== undefined) {
 		onMount(() => {
 			interval = setInterval(() => {
 				if (dots < 3) {
@@ -106,6 +127,9 @@
 	if (typeof window != undefined) {
 		onMount(async () => {
 			try {
+				// loading.set(false); // Set loading true only if there is no current error
+				// if (showError) return;
+
 				const response = await fetch(`${baseUrl}/ping`);
 				const data = await response.json();
 
@@ -132,7 +156,10 @@
 	let showLoading = false;
 	let startTime;
 
-	$: if ($loading && !showLoading) {
+	$: if ($loading && !showLoading && !showError) {
+		console.log(showError);
+		// Only show loading if loading is true, not already showing, and no error
+		console.log('loading, not show loading and not show error');
 		showLoading = true;
 		startTime = Date.now();
 	}
@@ -163,32 +190,71 @@
 
 	function handleError(event) {
 		let error = event.detail.message || 'An error occurred.';
-		errorMessage.set(error); // This sets the error in the store which should trigger the alert to show
+		loading.set(false);
+		console.log('handle error', error);
+		errorMessage.set('');
+		errorMessage.set(error); // This sets the error in the store
+		// showLoading = false;
+		showError = true; // Ensure this is set to true to display the error
 	}
 
-	let showError = writable(false); // store to control if the error is shown or not
-
-	function displayError() {
-		$showError = true;
-		setTimeout(() => {
-			$showError = false;
-		}, 3000); // auto-hide after 3 seconds, adjust as needed
-	}
-
-	// let isHighlighted = false;
-	// export let isHighlighted = false;
+	// function handleError(error) {
+	// 	let error = error.detail.message || 'An error occurred.';
+	// 	errorMessage.set(''); // Reset before setting new message
+	// 	errorMessage.set(error);
+	// }
 
 	function highlight(event) {
 		event.preventDefault();
 		setHighlight(true);
 	}
+
+	// let messages = ['Error Message 1', 'Error Message 2', 'Error Message 3'];
+	let messages = [];
+	let messageIdCounter = 0;
+	// init array
+	// each time errorMessage store is updated - add to the array
+	//
+
+	// Reactive statement
+	// $: if ($errorMessage) {
+	// 	messages.push($errorMessage);
+	// 	console.log(messages);
+	// 	errorMessage.set(''); // Reset the store if needed
+	// }
+
+	$: if ($errorMessage) {
+		console.log('Before updating messages:', messages);
+		messages = [...messages, $errorMessage];
+		console.log('After updating messages:', messages);
+		errorMessage.set(''); // Reset the store if needed
+	}
+
+	// Function to remove a message
+	function removeMessage(messageId) {
+		messages = messages.filter((msg) => msg.id !== messageId);
+	}
+
+	// Reactive statement to update positions
+	$: positions = messages.map((_, index) => {
+		const top = 20 + index * 50;
+		console.log(`Message ${index} position: ${top}px`);
+		return { top };
+	});
+	// style={`top: ${20 + index * 50}px;`}
 </script>
 
-<!-- Success alert - or error alert that appears at the top of the page -->
+<!-- TODO: fix this so the error messages don't overlap
+and they are dismissed in order -->
 
-{#if showLoading}
-	<Loading />
-{/if}
+{#each messages as message, index}
+	<!-- {console.log(message)} -->
+	<ErrorAlert message={message.text} on:dismiss={() => removeMessage(message.id)} />
+{/each}
+
+<!-- {#each messages as message, index (index)}
+	<ErrorAlert {message} style="top: {20 + index * 50}px" on:dismiss={() => removeMessage(index)} />
+{/each} -->
 
 <div
 	class="outerContainer {highlighted ? 'highlighted' : ''}"
@@ -221,10 +287,6 @@
 
 			{#if $duplicateError}
 				<p class="duplicate-error">{$duplicateError}</p>
-			{/if}
-
-			{#if isError}
-				<div class="error-alert active">{$errorMessage}</div>
 			{/if}
 
 			{#if $fileCount}
@@ -272,11 +334,18 @@
 		/* padding: 1rem; */
 	}
 
-	.middleTop,
-	.middle,
-	.middleBottom {
+	.middleTop {
 		flex: 1; /* Each part of the middle column takes equal height */
 		padding: 1rem;
+	}
+
+	.middle {
+		flex: 4; /* Each part of the middle column takes equal height */
+		padding: 1rem;
+	}
+	.middleBottom {
+		flex: 1; /* Each part of the middle column takes equal height */
+		padding: rem;
 	}
 
 	.duplicate-error {
@@ -294,27 +363,5 @@
 		opacity: 0.25;
 		/* opacity: inherit; */
 		/* Additional styles to indicate highlighting */
-	}
-
-	.error-alert {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		background-color: #f44336;
-		color: white;
-		text-align: center;
-		padding: 16px 0; /* same as navbar */
-		z-index: 1000;
-		transform: translateY(-100%);
-		transition: transform 0.3s ease-in-out;
-		font-family: system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica Neue,
-			Arial, Noto Sans, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol,
-			Noto Color Emoji; /* now matching the navbar font */
-		font-size: 14px; /* adjust if necessary to match navbar text size */
-	}
-
-	.error-alert.active {
-		transform: translateY(0); /* slide it into view */
 	}
 </style>

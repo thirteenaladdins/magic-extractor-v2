@@ -20,7 +20,8 @@
 	}
 </script>
 
-<svelte:head>
+<!-- TODO: reimplement this when I actually need it -->
+<!-- <svelte:head>
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-2X85K1KEH5"></script>
 	<script>
 		window.dataLayer = window.dataLayer || [];
@@ -31,7 +32,7 @@
 
 		gtag('config', 'G-2X85K1KEH5');
 	</script>
-</svelte:head>
+</svelte:head> -->
 
 <!-- Add version to the top left and link to github -->
 <NavigationBar />

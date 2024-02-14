@@ -1,12 +1,32 @@
 <!-- Here we'll run the new script against the upload script -->
-<!-- Go to pdf -  -->
+<!-- Go to pdf -  
+border handle size 
+
+calculate left side of window - 
+calculate remainder of right size of window
+onclick - listener - track 
+
+console.log - left and right side of line
+
+change action-bar-container -
+
+
+
+-->
 
 <script>
+	import GenericTable from './GenericTable.svelte';
+
 	import { onMount } from 'svelte';
 	import * as pdfjs from 'pdfjs-dist';
 
 	// import { mockResponseJson } from '../data/data.js';
 	import { sessionData } from '../store/sessionStore.js';
+
+	let width;
+	let height;
+
+	console.log();
 
 	let ocrText = '';
 	let pdfDimensions;
@@ -44,6 +64,9 @@
 		const uploadedFile = new Blob([uint8Array], { type: 'application/pdf' });
 		rawWords = [];
 		processPDF(uploadedFile);
+
+		// instead here we will have
+		// renderPDF();
 
 		const firstCell = document.querySelector('.entity-table td');
 		if (firstCell) {
@@ -84,18 +107,6 @@
 			}
 		});
 
-		// Button event listeners
-		document.getElementById('prev').addEventListener('click', function () {
-			if (pageNum <= 1) return;
-			pageNum--;
-			renderPage(pageNum);
-		});
-
-		document.getElementById('next').addEventListener('click', function () {
-			if (pageNum >= pdfDoc.numPages) return;
-			pageNum++;
-			renderPage(pageNum);
-		});
 		window.addEventListener('click', handleWindowClick);
 		// Clean up the event listener when the component is destroyed
 		return () => {
@@ -156,7 +167,9 @@
 	// 	ocrDisplay.textContent = text;
 	// }
 
-	async function processPDF(file) {
+	// what are we trying to do here?
+
+	async function processPDF2(file) {
 		// fetch request, or axios here
 		// ocr/upload file
 
@@ -226,7 +239,8 @@
 			ocrText = 'Error processing document.';
 		}
 	}
-	let pdfDoc = null;
+
+	// let pdfDoc = null;
 	let pageNum = 1; // Default page to display is the first one
 
 	// let canvas;
@@ -238,40 +252,78 @@
 	// 	document.getElementById('pdf-container').appendChild(canvas);
 	// });
 
-	function renderPage(num) {
-		pdfDoc.getPage(num).then(function (page) {
-			const viewport = page.getViewport({ scale: scale });
-			canvas.height = viewport.height;
-			canvas.width = viewport.width;
-			const renderContext = {
-				canvasContext: ctx,
-				viewport: viewport
-			};
-			page.render(renderContext);
-		});
+	let pdfDoc = null; // Global variable to store the loaded PDF document
 
-		// Update page counters, buttons' status, etc.
+	async function processPDF(file) {
+		try {
+			const arrayBuffer = await file.arrayBuffer();
+			const loadingTask = pdfjs.getDocument({ data: arrayBuffer });
+			pdfDoc = await loadingTask.promise;
+
+			// Optionally, handle OCR and native text extraction here
+			// ...
+
+			// Call renderPage for the first page
+			renderPage(1);
+		} catch (error) {
+			console.error('Error processing PDF:', error);
+			ocrText = 'Error processing document.';
+		}
 	}
 
-	// Load the PDF
-	// pdfjsLib.getDocument('path/to/your/document.pdf').promise.then(function (pdfDoc_) {
-	// 	pdfDoc = pdfDoc_;
-	// 	renderPage(pageNum);
-	// });
+	async function renderPage(pageNum) {
+		if (!pdfDoc) {
+			console.error('PDF Document is not loaded');
+			return;
+		}
 
-	// TODO:  so this used to be triggered upon the upload of the file
-	// now we want to view the session data
-	// instead, we need to handle the event when we navigate to this page.
-	//
+		try {
+			const page = await pdfDoc.getPage(pageNum);
+			const viewport = page.getViewport({ scale });
+			const dpr = window.devicePixelRatio || 1;
+			canvasElement.width = viewport.width * dpr;
+			canvasElement.height = viewport.height * dpr;
+			canvasElement.style.width = `${viewport.width}px`;
+			canvasElement.style.height = `${viewport.height}px`;
 
-	// function handleFileChange(event) {
-	// 	uploadedFile = event.target.files[0];
-	// 	rawWords = []; // Reset rawWords when new file is uploaded
-	// 	if (uploadedFile) {
+			const context = canvasElement.getContext('2d');
+			context.scale(dpr, dpr);
+			context.imageSmoothingEnabled = true;
 
-	// 	}
-	// }
+			const renderContext = {
+				canvasContext: context,
+				viewport
+			};
 
+			await page.render(renderContext).promise;
+
+			// Extract text or other data from the page if needed
+			// ...
+		} catch (error) {
+			console.error('Error rendering page:', error);
+		}
+	}
+
+	// Perhaps I have to pass in the PDF object in for this to work
+	function goToPrevPage() {
+		if (pdfDoc && pageNum > 1) {
+			pageNum--;
+			renderPage(pageNum);
+		} else {
+			console.error('PDF document not loaded or already at the first page');
+		}
+	}
+
+	function goToNextPage() {
+		if (pdfDoc && pageNum < pdfDoc.numPages) {
+			pageNum++;
+			renderPage(pageNum);
+		} else {
+			console.error('PDF document not loaded or already at the last page');
+		}
+	}
+
+	// TODO: set the scale for the bounding boxes
 	function setScale(newScale) {
 		scale = newScale;
 		processPDF(uploadedFile); // Only scales and recalculates bounding boxes
@@ -357,54 +409,113 @@
 		// Do whatever you want with trainingData, like sending it to your backend or saving it locally
 		console.log(trainingData);
 	}
+
+	// «««« RESIZE BAR ««««
+
+	// Variables for handling the resizing of containers
+	let initialActionBarWidth; // Initial width of the action bar container
+	let initialCanvasWidth; // Initial width of the canvas container
+	let borderHandle; // The draggable border handle element
+	let actionBarContainer; // The action bar container element
+	let resizing; // Flag to track the resizing state
+	let startX; // X-coordinate of the mouse at the start of resizing
+
+	// Function to handle mouse down event on the border handle
+	function onMouseDown(event) {
+		resizing = true;
+		startX = event.clientX;
+		initialActionBarWidth = actionBarContainer.offsetWidth;
+		initialCanvasWidth = canvasContainer.offsetWidth;
+		window.addEventListener('mousemove', onMouseMove);
+		window.addEventListener('mouseup', onMouseUp);
+	}
+
+	// Function to handle mouse move event during resizing
+	function onMouseMove(event) {
+		if (!resizing) return;
+		const dx = event.clientX - startX;
+		const newActionBarFlexBasis = initialActionBarWidth - dx;
+		const newCanvasFlexBasis = initialCanvasWidth + dx;
+		actionBarContainer.style.flex = `0 0 ${newActionBarFlexBasis}px`;
+		canvasContainer.style.flex = `0 0 ${newCanvasFlexBasis}px`;
+	}
+
+	// Function to handle mouse up event, ending the resizing process
+	function onMouseUp() {
+		resizing = false;
+		window.removeEventListener('mousemove', onMouseMove);
+		window.removeEventListener('mouseup', onMouseUp);
+	}
+
+	let tableHeaders = [
+		'HS CODE',
+		'Quantity',
+		'Net Weight',
+		'Gross Weight',
+		'Product Description',
+		'COO',
+		'Unit Price',
+		'Total Price'
+	];
 </script>
 
+<!-- added bind clientWidth and clientHeight for transparency -->
 <div id="pdf-container">
-	<div id="canvas-container" bind:this={canvasContainer}>
+	<!-- Paragraph width: {width}px Paragraph height: {height}px -->
+
+	<div
+		id="canvas-container"
+		bind:this={canvasContainer}
+		bind:clientWidth={width}
+		bind:clientHeight={height}
+	>
 		<canvas bind:this={canvasElement} />
 		<!-- <input type="file" id="pdf-upload" accept=".pdf" on:change={handleFileChange} />
 		<button on:click={toggleResults}>
 			{isOCREnabled ? 'Show Native Text' : 'Show OCR Results'}
 		</button> -->
-		<button id="prev">Previous</button>
-		<button id="next">Next</button>
+
+		<!-- add javascript - onclick - get next page or previous page
+		keep track of all pages that have been rendered/cached
+		-->
+		<!-- TODO: add on click - 
+			store documents, and store multiple documents etc. 
+			start there.
+			are we storing the whole document here? 
+		
+		
+		-->
+		<button
+			on:click={() => {
+				goToPrevPage(pdfDoc);
+			}}
+			id="prev">Previous</button
+		>
+		<button
+			on:click={() => {
+				goToNextPage(pdfDoc);
+			}}
+			id="next">Next</button
+		>
 		<div id="pdf-container" />
 	</div>
-	<div class="action-bar-container">
+	<div bind:this={borderHandle} class="border-handle resizable" on:mousedown={onMouseDown} />
+	<!-- what is the action bar? -->
+
+	<!-- TODO: get the other table component -->
+	<div class="action-bar-container" bind:this={actionBarContainer}>
 		<div class="action-bar">
-			<div class="border-handle" />
 			<div class="content">
 				<div class="ocr-display">
 					<!-- OCR results will be populated here -->
 				</div>
 				<div class="annotation-interface">Annotation</div>
-				<!-- The entity table -->
-				<table class="entity-table">
-					<thead>
-						<tr>
-							<th data-label="HS_CODE">HS CODE</th>
-							<th data-label="QUANTITY">Quantity</th>
-							<th data-label="NET_WEIGHT">Net Weight</th>
-							<th data-label="GROSS_WEIGHT">Gross Weight</th>
-							<th data-label="PRODUCT_DESCRIPTION">Product Description</th>
-							<th data-label="COO">COO</th>
-							<th data-label="UNIT_PRICE">Unit Price</th>
-							<th data-label="TOTAL_PRICE">Total Price</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td data-label="HS_CODE" />
-							<td data-label="QUANTITY" />
-							<td data-label="NET_WEIGHT" />
-							<td data-label="GROSS_WEIGHT" />
-							<td data-label="PRODUCT_DESCRIPTION" />
-							<td data-label="COO" />
-							<td data-label="UNIT_PRICE" />
-							<td data-label="TOTAL_PRICE" />
-						</tr>
-					</tbody>
-				</table>
+
+				<!-- TODO: Rework this -->
+				<div>
+					<GenericTable headers={tableHeaders} />
+				</div>
+
 				<button on:click={saveAnnotations}>Save Annotations</button>
 			</div>
 		</div>
@@ -421,6 +532,7 @@
 
 		/* PDF Viewer */
 		#canvas-container {
+			min-width: 0;
 			flex: 3;
 			position: relative;
 			overflow: hidden;
@@ -428,6 +540,7 @@
 
 		/* Action Bar */
 		.action-bar-container {
+			min-width: 0;
 			display: flex;
 			align-items: stretch;
 			flex: 2;
@@ -462,7 +575,8 @@
 		}
 
 		.active-cell {
-			background-color: #f5f5f5;
+			/* background-color: #f5f5f5; */
+			/* text-color: var(--text-color); */
 		}
 
 		.action-bar {
@@ -493,7 +607,7 @@
 			); /* 1px border centered */
 			cursor: default; /* default cursor for the handle area */
 			position: relative;
-			z-index: 2;
+			z-index: 100;
 		}
 
 		/* Hover effect only on the border itself */
@@ -542,7 +656,7 @@
 			position: absolute;
 			border: 2px solid transparent;
 			transition: border 0.3s ease;
-			z-index: 1000;
+			z-index: 99;
 		}
 
 		.ocr-word:hover {
