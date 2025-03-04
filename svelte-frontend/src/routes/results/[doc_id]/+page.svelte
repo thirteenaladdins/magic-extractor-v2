@@ -58,7 +58,7 @@
 		display: flex;
 		justify-content: center;
 		overflow: auto;
-		height: 750px;
+		height: 100vh;
 		overflow-y: auto;
 	}
 	.right-div {
@@ -67,6 +67,6 @@
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
-		height: 750px;
+		height: 100vh;
 	}
 </style>
